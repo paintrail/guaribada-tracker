@@ -22,24 +22,23 @@
             border: 4px solid white;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body>
+<body class="bg-slate-50">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-        
-        // Simulação dos ícones Lucide (Para rodar sem imports complexos)
-        const Icon = ({ name, size = 24, className = "" }) => {
-            return <span className={`inline-block ${className}`} style={{ width: size, height: size }}>
-                <i data-lucide={name}></i>
-            </span>;
-        };
 
-        // NOTA: O código abaixo é o seu código do Canvas adaptado para rodar no navegador
         function App() {
-            const [activeTab, setActiveTab] = useState('home');
+            const [activeTab, setActiveTab] = useState('home'); // 'home' ou 'stats'
             const [showModal, setShowModal] = useState(false);
             const [editingId, setEditingId] = useState(null);
             const [logs, setLogs] = useState([]);
@@ -73,8 +72,21 @@
                 } else {
                     setLogs([newLog, ...logs]);
                 }
+                closeModal();
+            };
+
+            const closeModal = () => {
                 setShowModal(false);
                 setEditingId(null);
+                setTitle('');
+                setDuration(30);
+            };
+
+            const deleteLog = (id, e) => {
+                e.stopPropagation();
+                if(confirm("Apagar este registro?")) {
+                    setLogs(logs.filter(l => l.id !== id));
+                }
             };
 
             const formatDuration = (mins) => {
@@ -84,63 +96,171 @@
                 return m > 0 ? `${h}h ${m}m` : `${h}h`;
             };
 
+            // Cálculos para Insights
+            const stats = {
+                sexo: logs.filter(l => l.type === 'sexo'),
+                solo: logs.filter(l => l.type === 'masturbacao'),
+            };
+
+            const getAverage = (arr) => {
+                if (arr.length === 0) return 0;
+                const total = arr.reduce((acc, curr) => acc + curr.duration, 0);
+                return Math.round(total / arr.length);
+            };
+
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-24 shadow-xl">
-                    {/* Header/Status */}
-                    <div className="p-6 pt-12">
-                        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white mb-6">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest">Guaribadas</p>
-                                    <h1 className="text-5xl font-black">{privacyMode ? '***' : logs.length}</h1>
+                <div className="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col relative shadow-2xl">
+                    
+                    {/* Conteúdo Principal */}
+                    <main className="flex-1 p-6 pt-12 overflow-y-auto">
+                        
+                        {activeTab === 'home' ? (
+                            <div className="animate-fade-in space-y-6">
+                                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest">Total de Guaribadas</p>
+                                            <h1 className="text-5xl font-black">{privacyMode ? '***' : logs.length}</h1>
+                                        </div>
+                                        <button onClick={() => setPrivacyMode(!privacyMode)} className="bg-white/10 p-3 rounded-2xl transition-colors hover:bg-white/20">
+                                            {privacyMode ? "🔓" : "🔒"}
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                                            <p className="text-[9px] text-slate-400 uppercase font-black">Sexo</p>
+                                            <p className="text-xl font-bold">{privacyMode ? '*' : stats.sexo.length}</p>
+                                        </div>
+                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                                            <p className="text-[9px] text-slate-400 uppercase font-black">Solo</p>
+                                            <p className="text-xl font-bold">{privacyMode ? '*' : stats.solo.length}</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <button onClick={() => setPrivacyMode(!privacyMode)} className="bg-white/10 p-3 rounded-2xl">
-                                    {privacyMode ? "🔓" : "🔒"}
+
+                                <button onClick={() => setShowModal(true)} className="w-full bg-indigo-600 text-white p-6 rounded-[2rem] font-black flex items-center justify-center gap-3 shadow-lg shadow-indigo-200 active:scale-95 transition-all">
+                                    <span className="text-2xl">+</span> NOVO REGISTRO
                                 </button>
+
+                                <div className="space-y-4">
+                                    <h2 className="font-black text-xl text-slate-800 px-2">Histórico Recente</h2>
+                                    {logs.length === 0 ? (
+                                        <p className="text-center py-10 text-slate-400 font-medium">Nenhum registro encontrado.</p>
+                                    ) : (
+                                        logs.map(log => (
+                                            <div key={log.id} className="bg-white p-5 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm group">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${log.type === 'sexo' ? 'bg-rose-50 text-rose-500' : 'bg-indigo-50 text-indigo-600'}`}>
+                                                        {log.type === 'sexo' ? '👥' : '👤'}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-black text-slate-800">{privacyMode ? '•••••' : log.title}</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{new Date(log.date).toLocaleDateString('pt-BR')} • {formatDuration(log.duration)}</p>
+                                                    </div>
+                                                </div>
+                                                <button onClick={(e) => deleteLog(log.id, e)} className="text-slate-200 hover:text-red-400 p-2 transition-colors">
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
-                        </div>
-
-                        {/* Botão Add */}
-                        <button onClick={() => setShowModal(true)} className="w-full bg-white border border-slate-200 p-6 rounded-[2rem] font-black text-slate-800 flex items-center justify-center gap-3 shadow-sm active:scale-95 transition-all">
-                            <span className="text-2xl text-indigo-600">+</span> NOVO REGISTRO
-                        </button>
-
-                        {/* Listagem */}
-                        <div className="mt-8 space-y-4">
-                            <h2 className="font-black text-xl text-slate-800 px-2">Histórico</h2>
-                            {logs.map(log => (
-                                <div key={log.id} className="bg-white p-5 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm">
-                                    <div>
-                                        <p className="font-black text-slate-800">{privacyMode ? '•••••' : log.title}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{log.date} • {formatDuration(log.duration)}</p>
+                        ) : (
+                            <div className="animate-fade-in space-y-6">
+                                <h2 className="text-3xl font-black text-slate-800 tracking-tight">Insights</h2>
+                                
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="bg-rose-500 p-6 rounded-[2.5rem] text-white shadow-lg">
+                                        <p className="text-[10px] font-black uppercase opacity-80 mb-1">Média de Tempo (Sexo)</p>
+                                        <p className="text-3xl font-black">{formatDuration(getAverage(stats.sexo))}</p>
                                     </div>
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${log.type === 'sexo' ? 'bg-rose-50 text-rose-500' : 'bg-indigo-50 text-indigo-600'}`}>
-                                        {log.type === 'sexo' ? '👥' : '👤'}
+                                    
+                                    <div className="bg-indigo-600 p-6 rounded-[2.5rem] text-white shadow-lg">
+                                        <p className="text-[10px] font-black uppercase opacity-80 mb-1">Média de Tempo (Solo)</p>
+                                        <p className="text-3xl font-black">{formatDuration(getAverage(stats.solo))}</p>
+                                    </div>
+
+                                    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-4">Distribuição de Intensidade</p>
+                                        <div className="flex items-end justify-between h-24 px-2 gap-2">
+                                            {[1,2,3,4,5].map(level => {
+                                                const count = logs.filter(l => l.intensity === level).length;
+                                                const height = logs.length ? (count / logs.length) * 100 : 0;
+                                                return (
+                                                    <div key={level} className="flex-1 flex flex-col items-center gap-2">
+                                                        <div className="w-full bg-indigo-100 rounded-t-lg relative flex items-end overflow-hidden" style={{height: '100%'}}>
+                                                            <div className="w-full bg-indigo-500 transition-all duration-500" style={{height: `${height}%`}}></div>
+                                                        </div>
+                                                        <span className="text-[10px] font-black text-slate-400">{level}★</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
+                        )}
+                    </main>
 
-                    {/* Modal */}
+                    {/* Navegação Inferior */}
+                    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 backdrop-blur-md border-t border-slate-100 p-4 flex justify-around items-center z-40">
+                        <button 
+                            onClick={() => setActiveTab('home')}
+                            className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' ? 'text-indigo-600 scale-110' : 'text-slate-300'}`}
+                        >
+                            <span className="text-2xl">🏠</span>
+                            <span className="text-[9px] font-black uppercase">Início</span>
+                        </button>
+                        
+                        <div className="w-12"></div> {/* Espaço para o botão central se quiser adicionar depois */}
+
+                        <button 
+                            onClick={() => setActiveTab('stats')}
+                            className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'stats' ? 'text-indigo-600 scale-110' : 'text-slate-300'}`}
+                        >
+                            <span className="text-2xl">📊</span>
+                            <span className="text-[9px] font-black uppercase">Insights</span>
+                        </button>
+                    </nav>
+
+                    {/* Modal de Registro */}
                     {showModal && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end">
-                            <div className="bg-white w-full rounded-t-[3rem] p-8 pb-12 animate-bounce-in">
-                                <div className="flex justify-between mb-6">
-                                    <h3 className="text-2xl font-black">Registrar</h3>
-                                    <button onClick={() => setShowModal(false)} className="text-slate-300 font-bold">FECHAR</button>
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end">
+                            <div className="bg-white w-full rounded-t-[3rem] p-8 pb-12 shadow-2xl animate-fade-in">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-2xl font-black text-slate-800">Nova Guaribada</h3>
+                                    <button onClick={closeModal} className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-400">✕</button>
                                 </div>
                                 <form onSubmit={handleSave} className="space-y-6">
-                                    <input type="text" placeholder="Título (ex: Noite Quente)" className="w-full p-4 bg-slate-100 rounded-2xl font-bold" value={title} onChange={e => setTitle(e.target.value)} />
-                                    <div className="flex gap-4">
-                                        <button type="button" onClick={() => setType('sexo')} className={`flex-1 p-4 rounded-2xl font-black ${type==='sexo' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400'}`}>SEXO</button>
-                                        <button type="button" onClick={() => setType('masturbacao')} className={`flex-1 p-4 rounded-2xl font-black ${type==='masturbacao' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>SOLO</button>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Título</label>
+                                        <input type="text" placeholder="Ex: Noite de sexta" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 ring-indigo-500/20" value={title} onChange={e => setTitle(e.target.value)} />
                                     </div>
-                                    <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase">Duração: {formatDuration(duration)}</label>
-                                        <input type="range" min="30" max="600" step="30" value={duration} onChange={e => setDuration(e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2" />
+
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={() => setType('sexo')} className={`flex-1 py-4 rounded-2xl font-black transition-all ${type==='sexo' ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' : 'bg-slate-100 text-slate-400'}`}>👥 SEXO</button>
+                                        <button type="button" onClick={() => setType('masturbacao')} className={`flex-1 py-4 rounded-2xl font-black transition-all ${type==='masturbacao' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'}`}>👤 SOLO</button>
                                     </div>
-                                    <button className="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-black">SALVAR</button>
+
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center px-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase">Duração</label>
+                                            <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{formatDuration(duration)}</span>
+                                        </div>
+                                        <input type="range" min="30" max="600" step="30" value={duration} onChange={e => setDuration(e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase text-center block">Intensidade</label>
+                                        <div className="flex justify-between px-4">
+                                            {[1,2,3,4,5].map(i => (
+                                                <button key={i} type="button" onClick={() => setIntensity(i)} className={`w-10 h-10 rounded-xl font-black transition-all ${intensity===i ? 'bg-indigo-600 text-white scale-110' : 'text-slate-300 bg-slate-50'}`}>{i}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <button className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl active:scale-95 transition-all">SALVAR REGISTRO</button>
                                 </form>
                             </div>
                         </div>
