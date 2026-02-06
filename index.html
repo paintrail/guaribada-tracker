@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guaribada Tracker</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Simulação dos ícones Lucide (Para rodar sem imports complexos)
+        const Icon = ({ name, size = 24, className = "" }) => {
+            return <span className={`inline-block ${className}`} style={{ width: size, height: size }}>
+                <i data-lucide={name}></i>
+            </span>;
+        };
+
+        // NOTA: O código abaixo é o seu código do Canvas adaptado para rodar no navegador
+        function App() {
+            const [activeTab, setActiveTab] = useState('home');
+            const [showModal, setShowModal] = useState(false);
+            const [editingId, setEditingId] = useState(null);
+            const [logs, setLogs] = useState([]);
+            const [privacyMode, setPrivacyMode] = useState(false);
+            
+            // Estados do Form
+            const [title, setTitle] = useState('');
+            const [type, setType] = useState('sexo');
+            const [date, setDate] = useState(new Date().toISOString().substr(0, 10));
+            const [duration, setDuration] = useState(30);
+            const [intensity, setIntensity] = useState(3);
+
+            useEffect(() => {
+                const saved = localStorage.getItem('guaribada_v1');
+                if (saved) setLogs(JSON.parse(saved));
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('guaribada_v1', JSON.stringify(logs));
+            }, [logs]);
+
+            const handleSave = (e) => {
+                e.preventDefault();
+                const newLog = {
+                    id: editingId || Date.now(),
+                    title: title || (type === 'sexo' ? 'Sexo' : 'Solo'),
+                    type, date, duration: parseInt(duration), intensity
+                };
+                if (editingId) {
+                    setLogs(logs.map(l => l.id === editingId ? newLog : l));
+                } else {
+                    setLogs([newLog, ...logs]);
+                }
+                setShowModal(false);
+                setEditingId(null);
+            };
+
+            const formatDuration = (mins) => {
+                if (mins < 60) return `${mins} min`;
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return m > 0 ? `${h}h ${m}m` : `${h}h`;
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-24 shadow-xl">
+                    {/* Header/Status */}
+                    <div className="p-6 pt-12">
+                        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white mb-6">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest">Guaribadas</p>
+                                    <h1 className="text-5xl font-black">{privacyMode ? '***' : logs.length}</h1>
+                                </div>
+                                <button onClick={() => setPrivacyMode(!privacyMode)} className="bg-white/10 p-3 rounded-2xl">
+                                    {privacyMode ? "🔓" : "🔒"}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Botão Add */}
+                        <button onClick={() => setShowModal(true)} className="w-full bg-white border border-slate-200 p-6 rounded-[2rem] font-black text-slate-800 flex items-center justify-center gap-3 shadow-sm active:scale-95 transition-all">
+                            <span className="text-2xl text-indigo-600">+</span> NOVO REGISTRO
+                        </button>
+
+                        {/* Listagem */}
+                        <div className="mt-8 space-y-4">
+                            <h2 className="font-black text-xl text-slate-800 px-2">Histórico</h2>
+                            {logs.map(log => (
+                                <div key={log.id} className="bg-white p-5 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm">
+                                    <div>
+                                        <p className="font-black text-slate-800">{privacyMode ? '•••••' : log.title}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{log.date} • {formatDuration(log.duration)}</p>
+                                    </div>
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${log.type === 'sexo' ? 'bg-rose-50 text-rose-500' : 'bg-indigo-50 text-indigo-600'}`}>
+                                        {log.type === 'sexo' ? '👥' : '👤'}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Modal */}
+                    {showModal && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end">
+                            <div className="bg-white w-full rounded-t-[3rem] p-8 pb-12 animate-bounce-in">
+                                <div className="flex justify-between mb-6">
+                                    <h3 className="text-2xl font-black">Registrar</h3>
+                                    <button onClick={() => setShowModal(false)} className="text-slate-300 font-bold">FECHAR</button>
+                                </div>
+                                <form onSubmit={handleSave} className="space-y-6">
+                                    <input type="text" placeholder="Título (ex: Noite Quente)" className="w-full p-4 bg-slate-100 rounded-2xl font-bold" value={title} onChange={e => setTitle(e.target.value)} />
+                                    <div className="flex gap-4">
+                                        <button type="button" onClick={() => setType('sexo')} className={`flex-1 p-4 rounded-2xl font-black ${type==='sexo' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400'}`}>SEXO</button>
+                                        <button type="button" onClick={() => setType('masturbacao')} className={`flex-1 p-4 rounded-2xl font-black ${type==='masturbacao' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>SOLO</button>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase">Duração: {formatDuration(duration)}</label>
+                                        <input type="range" min="30" max="600" step="30" value={duration} onChange={e => setDuration(e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2" />
+                                    </div>
+                                    <button className="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-black">SALVAR</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
