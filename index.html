@@ -22,6 +22,11 @@
             border: 4px solid white;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
+        input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+            min-height: 3rem;
+        }
         .animate-fade-in {
             animation: fadeIn 0.3s ease-out;
         }
@@ -79,6 +84,7 @@
                 setShowModal(false);
                 setEditingId(null);
                 setTitle('');
+                setDate(new Date().toISOString().substr(0, 10));
                 setDuration(30);
             };
 
@@ -96,7 +102,7 @@
                 return m > 0 ? `${h}h ${m}m` : `${h}h`;
             };
 
-            // Cálculos para Insights
+            // Cálculos para Insights e Contadores
             const stats = {
                 sexo: logs.filter(l => l.type === 'sexo'),
                 solo: logs.filter(l => l.type === 'masturbacao'),
@@ -116,26 +122,40 @@
                         
                         {activeTab === 'home' ? (
                             <div className="animate-fade-in space-y-6">
-                                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl">
-                                    <div className="flex justify-between items-start mb-6">
+                                {/* CARD DE CONTAGEM REESTRUTURADO */}
+                                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
+                                    <div className="flex justify-between items-start mb-8 relative z-10">
                                         <div>
-                                            <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest">Total de Guaribadas</p>
-                                            <h1 className="text-5xl font-black">{privacyMode ? '***' : logs.length}</h1>
+                                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Status Geral</p>
+                                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                                {privacyMode ? '***' : logs.length} <span className="text-[10px] text-slate-500 uppercase">Guaribadas</span>
+                                            </h2>
                                         </div>
                                         <button onClick={() => setPrivacyMode(!privacyMode)} className="bg-white/10 p-3 rounded-2xl transition-colors hover:bg-white/20">
                                             {privacyMode ? "🔓" : "🔒"}
                                         </button>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                                            <p className="text-[9px] text-slate-400 uppercase font-black">Sexo</p>
-                                            <p className="text-xl font-bold">{privacyMode ? '*' : stats.sexo.length}</p>
+
+                                    <div className="grid grid-cols-2 gap-4 relative z-10">
+                                        <div className="bg-rose-500/10 border border-rose-500/20 p-5 rounded-3xl">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-rose-500">👥</span>
+                                                <p className="text-[9px] text-rose-300 uppercase font-black tracking-wider">Sexo</p>
+                                            </div>
+                                            <p className="text-4xl font-black text-rose-50">{privacyMode ? '***' : stats.sexo.length}</p>
                                         </div>
-                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                                            <p className="text-[9px] text-slate-400 uppercase font-black">Solo</p>
-                                            <p className="text-xl font-bold">{privacyMode ? '*' : stats.solo.length}</p>
+                                        
+                                        <div className="bg-indigo-500/10 border border-indigo-500/20 p-5 rounded-3xl">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-indigo-500">👤</span>
+                                                <p className="text-[9px] text-indigo-300 uppercase font-black tracking-wider">Solo</p>
+                                            </div>
+                                            <p className="text-4xl font-black text-indigo-50">{privacyMode ? '***' : stats.solo.length}</p>
                                         </div>
                                     </div>
+                                    
+                                    {/* Detalhe estético no fundo */}
+                                    <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl"></div>
                                 </div>
 
                                 <button onClick={() => setShowModal(true)} className="w-full bg-indigo-600 text-white p-6 rounded-[2rem] font-black flex items-center justify-center gap-3 shadow-lg shadow-indigo-200 active:scale-95 transition-all">
@@ -143,19 +163,26 @@
                                 </button>
 
                                 <div className="space-y-4">
-                                    <h2 className="font-black text-xl text-slate-800 px-2">Histórico Recente</h2>
+                                    <div className="flex justify-between items-center px-2">
+                                        <h2 className="font-black text-xl text-slate-800">Histórico Recente</h2>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Offline</span>
+                                    </div>
                                     {logs.length === 0 ? (
-                                        <p className="text-center py-10 text-slate-400 font-medium">Nenhum registro encontrado.</p>
+                                        <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] py-12 text-center">
+                                            <p className="text-slate-400 font-bold">Nenhum registro ainda.<br/>Comece agora!</p>
+                                        </div>
                                     ) : (
                                         logs.map(log => (
-                                            <div key={log.id} className="bg-white p-5 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm group">
+                                            <div key={log.id} className="bg-white p-5 rounded-[2.2rem] border border-slate-100 flex justify-between items-center shadow-sm hover:shadow-md transition-shadow">
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${log.type === 'sexo' ? 'bg-rose-50 text-rose-500' : 'bg-indigo-50 text-indigo-600'}`}>
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner ${log.type === 'sexo' ? 'bg-rose-50 text-rose-500' : 'bg-indigo-50 text-indigo-600'}`}>
                                                         {log.type === 'sexo' ? '👥' : '👤'}
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-slate-800">{privacyMode ? '•••••' : log.title}</p>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{new Date(log.date).toLocaleDateString('pt-BR')} • {formatDuration(log.duration)}</p>
+                                                        <p className="font-black text-slate-800 leading-tight">{privacyMode ? '•••••' : log.title}</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
+                                                            {new Date(log.date + 'T00:00:00').toLocaleDateString('pt-BR', {weekday: 'short', day: '2-digit', month: '2-digit'})} • {formatDuration(log.duration)}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <button onClick={(e) => deleteLog(log.id, e)} className="text-slate-200 hover:text-red-400 p-2 transition-colors">
@@ -172,25 +199,25 @@
                                 
                                 <div className="grid grid-cols-1 gap-4">
                                     <div className="bg-rose-500 p-6 rounded-[2.5rem] text-white shadow-lg">
-                                        <p className="text-[10px] font-black uppercase opacity-80 mb-1">Média de Tempo (Sexo)</p>
+                                        <p className="text-[10px] font-black uppercase opacity-80 mb-1 tracking-widest">Média de Tempo (Sexo)</p>
                                         <p className="text-3xl font-black">{formatDuration(getAverage(stats.sexo))}</p>
                                     </div>
                                     
                                     <div className="bg-indigo-600 p-6 rounded-[2.5rem] text-white shadow-lg">
-                                        <p className="text-[10px] font-black uppercase opacity-80 mb-1">Média de Tempo (Solo)</p>
+                                        <p className="text-[10px] font-black uppercase opacity-80 mb-1 tracking-widest">Média de Tempo (Solo)</p>
                                         <p className="text-3xl font-black">{formatDuration(getAverage(stats.solo))}</p>
                                     </div>
 
                                     <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-4">Distribuição de Intensidade</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Distribuição de Intensidade</p>
                                         <div className="flex items-end justify-between h-24 px-2 gap-2">
                                             {[1,2,3,4,5].map(level => {
                                                 const count = logs.filter(l => l.intensity === level).length;
                                                 const height = logs.length ? (count / logs.length) * 100 : 0;
                                                 return (
                                                     <div key={level} className="flex-1 flex flex-col items-center gap-2">
-                                                        <div className="w-full bg-indigo-100 rounded-t-lg relative flex items-end overflow-hidden" style={{height: '100%'}}>
-                                                            <div className="w-full bg-indigo-500 transition-all duration-500" style={{height: `${height}%`}}></div>
+                                                        <div className="w-full bg-slate-50 rounded-t-lg relative flex items-end overflow-hidden" style={{height: '100%'}}>
+                                                            <div className="w-full bg-indigo-500 transition-all duration-700" style={{height: `${height}%`}}></div>
                                                         </div>
                                                         <span className="text-[10px] font-black text-slate-400">{level}★</span>
                                                     </div>
@@ -207,60 +234,70 @@
                     <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 backdrop-blur-md border-t border-slate-100 p-4 flex justify-around items-center z-40">
                         <button 
                             onClick={() => setActiveTab('home')}
-                            className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' ? 'text-indigo-600 scale-110' : 'text-slate-300'}`}
+                            className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'home' ? 'text-indigo-600 scale-110 font-black' : 'text-slate-300 font-bold'}`}
                         >
                             <span className="text-2xl">🏠</span>
-                            <span className="text-[9px] font-black uppercase">Início</span>
+                            <span className="text-[9px] uppercase tracking-tighter">Início</span>
                         </button>
                         
-                        <div className="w-12"></div> {/* Espaço para o botão central se quiser adicionar depois */}
+                        <div className="w-12"></div>
 
                         <button 
                             onClick={() => setActiveTab('stats')}
-                            className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'stats' ? 'text-indigo-600 scale-110' : 'text-slate-300'}`}
+                            className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'stats' ? 'text-indigo-600 scale-110 font-black' : 'text-slate-300 font-bold'}`}
                         >
                             <span className="text-2xl">📊</span>
-                            <span className="text-[9px] font-black uppercase">Insights</span>
+                            <span className="text-[9px] uppercase tracking-tighter">Insights</span>
                         </button>
                     </nav>
 
                     {/* Modal de Registro */}
                     {showModal && (
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end">
-                            <div className="bg-white w-full rounded-t-[3rem] p-8 pb-12 shadow-2xl animate-fade-in">
+                            <div className="bg-white w-full rounded-t-[3rem] p-8 pb-12 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
                                 <div className="flex justify-between items-center mb-8">
-                                    <h3 className="text-2xl font-black text-slate-800">Nova Guaribada</h3>
-                                    <button onClick={closeModal} className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-400">✕</button>
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Novo Registro</h3>
+                                    <button onClick={closeModal} className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-400 hover:bg-slate-200 transition-colors">✕</button>
                                 </div>
                                 <form onSubmit={handleSave} className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Título</label>
-                                        <input type="text" placeholder="Ex: Noite de sexta" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 ring-indigo-500/20" value={title} onChange={e => setTitle(e.target.value)} />
+                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">O que rolou?</label>
+                                        <input type="text" placeholder="Ex: Noite insana" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 ring-indigo-500/20" value={title} onChange={e => setTitle(e.target.value)} />
                                     </div>
 
                                     <div className="flex gap-3">
-                                        <button type="button" onClick={() => setType('sexo')} className={`flex-1 py-4 rounded-2xl font-black transition-all ${type==='sexo' ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' : 'bg-slate-100 text-slate-400'}`}>👥 SEXO</button>
-                                        <button type="button" onClick={() => setType('masturbacao')} className={`flex-1 py-4 rounded-2xl font-black transition-all ${type==='masturbacao' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'}`}>👤 SOLO</button>
+                                        <button type="button" onClick={() => setType('sexo')} className={`flex-1 py-4 rounded-2xl font-black transition-all ${type==='sexo' ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>👥 SEXO</button>
+                                        <button type="button" onClick={() => setType('masturbacao')} className={`flex-1 py-4 rounded-2xl font-black transition-all ${type==='masturbacao' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>👤 SOLO</button>
                                     </div>
 
-                                    <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Quando foi?</label>
+                                        <input 
+                                            type="date" 
+                                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-800 outline-none focus:ring-2 ring-indigo-500/20" 
+                                            value={date} 
+                                            onChange={e => setDate(e.target.value)} 
+                                        />
+                                    </div>
+
+                                    <div className="space-y-4 pt-2">
                                         <div className="flex justify-between items-center px-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase">Duração</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duração</label>
                                             <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{formatDuration(duration)}</span>
                                         </div>
                                         <input type="range" min="30" max="600" step="30" value={duration} onChange={e => setDuration(e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase text-center block">Intensidade</label>
-                                        <div className="flex justify-between px-4">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase text-center block tracking-widest">Intensidade (1-5)</label>
+                                        <div className="flex justify-between px-2 gap-2">
                                             {[1,2,3,4,5].map(i => (
-                                                <button key={i} type="button" onClick={() => setIntensity(i)} className={`w-10 h-10 rounded-xl font-black transition-all ${intensity===i ? 'bg-indigo-600 text-white scale-110' : 'text-slate-300 bg-slate-50'}`}>{i}</button>
+                                                <button key={i} type="button" onClick={() => setIntensity(i)} className={`flex-1 aspect-square rounded-2xl font-black transition-all border-2 ${intensity===i ? 'bg-indigo-600 text-white border-indigo-600 scale-105 shadow-md shadow-indigo-100' : 'text-slate-300 bg-white border-slate-50'}`}>{i}</button>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <button className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl active:scale-95 transition-all">SALVAR REGISTRO</button>
+                                    <button className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl active:scale-95 transition-all mt-4">SALVAR REGISTRO</button>
                                 </form>
                             </div>
                         </div>
